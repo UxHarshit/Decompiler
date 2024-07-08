@@ -1,5 +1,5 @@
 ### Decompiler
- This project is based decompiling file with intregated IDE for editing and compiling the code.
+ This project is based on decompiling file with intregated IDE for editing and compiling the code.
  Whole project is written in C++ and imgui library is used for GUI.
 
 ### Supports file types
