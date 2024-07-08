@@ -5,6 +5,7 @@ int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdL
 	gui::createHWindow("Decompiler", "decompiler class");
 	gui::createDevice();
 	gui::createImgui();
+	gui::InitTextEditor();
 	gui::SetupImGuiStyle();
 
 

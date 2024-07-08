@@ -2,6 +2,8 @@
 
 #include <d3d9.h>
 #include <string>
+#include "..\TextEditor\TextEditor.h"
+
 
 namespace gui
 {
@@ -37,8 +39,12 @@ namespace gui
 		const char* windowName,
 		const char* className
 	) noexcept;
+
+	inline TextEditor Editor = { };
+	inline auto lang = TextEditor::LanguageDefinition::Smali();
 	
 	void SetupImGuiStyle() noexcept;
+	void InitTextEditor() noexcept;
 
 	void DestroyWindow() noexcept;
 

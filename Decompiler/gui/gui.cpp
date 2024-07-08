@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
+#include <streambuf>
 #include <Shlwapi.h>
 
 #pragma comment(lib, "shlwapi.lib")
@@ -272,7 +274,6 @@ void MoonLightStyle() noexcept
 void ComfyStyle()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
-
 	style.Alpha = 1.0f;
 	style.DisabledAlpha = 0.1000000014901161f;
 	style.WindowPadding = ImVec2(8.0f, 8.0f);
@@ -706,37 +707,100 @@ void drawDecompiler() noexcept {
 	ImGui::NewLine();
 
 }
-static char file[256] = "";
 
+void gui::InitTextEditor() noexcept
+{
+	// Setup Editor
+	Editor.SetLanguageDefinition(lang);
+
+}
+
+
+float lastTime = 0.0f;
+
+
+static char file[256] = "";
 void drawIde() noexcept {
 	ImGui::Text("IDE");
 
 	// Drag and drop file
-	ImGui::Text("Drag and drop file here");
+	ImGui::Text("Select your file");
 	ImGui::InputText("##File", file, IM_ARRAYSIZE(file), ImGuiInputTextFlags_ReadOnly);
-	DragAcceptFiles(gui::window, true);
+	ImGui::SameLine();
+	if (ImGui::Button("Browse", ImVec2(100, 30))) {
 
-	auto currPos = ImGui::GetCursorPos();
-
-	if (currPos.x != 0) {
-		// File dropped
-		if (ImGui::BeginDragDropTarget()) {
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO")) {
-				IM_ASSERT(payload->DataSize == sizeof(char*));
-				strcpy_s(file, (char*)payload->Data);
-			}
-			ImGui::EndDragDropTarget();
+		OPENFILENAME ofn;
+		char szFile[260];
+		ZeroMemory(&ofn, sizeof(ofn));
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = NULL;
+		ofn.lpstrFile = szFile;
+		ofn.lpstrFile[0] = '\0';
+		ofn.nMaxFile = sizeof(szFile);
+		ofn.lpstrFilter = "Smali Files\0*.smali\0\0";
+		ofn.nFilterIndex = 1;
+		ofn.lpstrFileTitle = NULL;
+		ofn.nMaxFileTitle = 0;
+		ofn.lpstrInitialDir = NULL;
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+		if (GetOpenFileName(&ofn) == TRUE) {
+			strcpy_s(file, ofn.lpstrFile);
+			std::ifstream t(file);
+			std::string str((std::istreambuf_iterator<char>(t)),
+				std::istreambuf_iterator<char>());
+			gui::Editor.SetText(str);
+			t.close();
 		}
 	}
 
-	// Code Text Editor with syntax highlighting
+
+
+
 	static char code[4096] = "";
 	int width = ImGui::GetWindowSize().x - 50;
 
-	ImGui::InputTextMultiline("##Code", code, IM_ARRAYSIZE(code), ImVec2(width, 500), ImGuiInputTextFlags_AllowTabInput);
+	gui::Editor.Render("##Code", ImVec2(width, 500), code);
+	//ImGui::InputTextMultiline("##Code", code, IM_ARRAYSIZE(code), ImVec2(width, 500), ImGuiInputTextFlags_AllowTabInput);
 
 	if (ImGui::Button("Save", ImVec2(90, 30))) {
+		std::string code =  gui::Editor.GetText();
+		std::ofstream out(file);
+		out << code;
+		out.close();
+		lastTime = ImGui::GetTime();
 	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Save the file Ctrl + S");
+	}
+
+
+	// Ctrl + S to save
+	ImGuiIO& io = ImGui::GetIO();
+	io.WantCaptureKeyboard = true;
+
+	if (io.KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_S))) {
+		std::string code = gui::Editor.GetText();
+		std::ofstream out(file);
+		out << code;
+		out.close();
+		lastTime = ImGui::GetTime();
+	}
+	
+	if (ImGui::IsKeyDown(ImGuiKey_RightCtrl) && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_S))) {
+		std::string code = gui::Editor.GetText();
+		std::ofstream out(file);
+		out << code;
+		out.close();
+		lastTime = ImGui::GetTime();
+	}
+
+	ImGui::SameLine();
+	if (ImGui::GetTime() - lastTime < 2.0f)
+		ImGui::Text("Saved successfully");
+
+	io.WantCaptureKeyboard = false;
+
 }
 
 bool isFullscreen = false;
